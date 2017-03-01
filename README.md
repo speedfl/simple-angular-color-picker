@@ -6,10 +6,10 @@ This is under MIT liscence so you can copy past it improve it etc
 to use it:
 
 `
-<color-picker [startColor]="'#FF0000'" (colorChanged)="setColor($event)"></color-picker>
+<color-picker [hexColor]="'#FF0000'" (colorChanged)="setColor($event)"></color-picker>
 `
 
-startColor is the color on which you want to start.
+hexColor is the color on which you want to start (the palette will be initialized on that color). If not provided it will be on #0000FF (blue).
 
 colorChanged is the event to get the color back:
 
