@@ -1,9 +1,32 @@
 import {Component, Output, Input, ViewChild,EventEmitter} from '@angular/core';
 
+const POUCH = [
+  {
+    START : "mousedown",
+    MOVE : "mousemove",
+    STOP : ["mouseup"]
+  },
+  {
+    START : "touchstart",
+    MOVE : "touchmove",
+    STOP : ["touchend", "touchcancel"]
+  },
+  {
+    START : "pointerdown",
+    MOVE : "pointermove",
+    STOP : ["pointerup", "pointercancel"]
+  },
+  {
+    START : "MSPointerDown",
+    MOVE : "MSPointerMove",
+    STOP : ["MSPointerUp",  "MSPointerCancel"]
+  },
+];
+
 @Component({
   selector: 'color-picker',
-  template: ` <canvas #palette style="background:white;" class='center'></canvas>
-              <canvas #chooser style="background:white; margin-top: 20px; margin-bottom: 20px; " class='center'></canvas>`
+  template: ` <canvas #palette style="background:white;"></canvas>
+              <canvas #chooser style="background:white; margin-top: 20px; margin-bottom: 20px; "></canvas>`
 })
 export class ColorPicker {
 
@@ -106,17 +129,21 @@ export class ColorPicker {
       this.updateColor(event, canvasPalette, this.ctxPalette);
     };
 
-    canvasPalette.addEventListener('mousedown', (event) => {
-      this.drawPalette(this.colorFromChooser);
-      canvasPalette.addEventListener('mousemove', eventChangeColor);
-      this.updateColor(event, canvasPalette, this.ctxPalette);
-    });
+    POUCH.forEach(pouch => {
+      canvasPalette.addEventListener(pouch.START, (event) => {
+        this.drawPalette(this.colorFromChooser);
+        canvasPalette.addEventListener(pouch.MOVE, eventChangeColor);
+        this.updateColor(event, canvasPalette, this.ctxPalette);
+      });
 
-    canvasPalette.addEventListener('mouseup', (event) => {
-      canvasPalette.removeEventListener('mousemove', eventChangeColor);
-      this.updateColor(event, canvasPalette, this.ctxPalette);
-      this.drawSelector(this.ctxPalette, this.paletteX, this.paletteY);
-    });
+      pouch.STOP.forEach(stop => {
+        canvasPalette.addEventListener(stop, (event) => {
+          canvasPalette.removeEventListener(pouch.MOVE, eventChangeColor);
+          this.updateColor(event, canvasPalette, this.ctxPalette);
+          this.drawSelector(this.ctxPalette, this.paletteX, this.paletteY);
+        });
+      })
+    })
   }
 
   drawPalette(endColor : string){
@@ -125,12 +152,15 @@ export class ColorPicker {
 
     var gradient = this.ctxPalette.createLinearGradient(0, 0, this.ctxPalette.canvas.width, 0);
 
+    // Create color gradient
     gradient.addColorStop(0,    "#FFFFFF");
     gradient.addColorStop(1,    endColor);
 
+      // Apply gradient to canvas
     this.ctxPalette.fillStyle = gradient;
     this.ctxPalette.fillRect(0, 0, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height);
 
+    // Create semi transparent gradient (white -> trans. -> black)
     gradient = this.ctxPalette.createLinearGradient(0, 0, 0, this.ctxPalette.canvas.height);
     gradient.addColorStop(0,   "rgba(255, 255, 255, 1)");
     gradient.addColorStop(0.5, "rgba(255, 255, 255, 0)");
@@ -163,20 +193,27 @@ export class ColorPicker {
 
    var eventChangeColorChooser = (event) => {
      this.updateColorChooser(event, canvasChooser, ctx);
+     this.drawSelector(this.ctxPalette, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height / 2);
    };
 
-   canvasChooser.addEventListener('mousedown', (event) => {
-     canvasChooser.addEventListener('mousemove', eventChangeColorChooser);
-     this.updateColorChooser(event, canvasChooser, ctx);
-   });
+   POUCH.forEach(pouch => {
+     canvasChooser.addEventListener(pouch.START, (event) => {
+       this.drawChooser(ctx);
+       canvasChooser.addEventListener(pouch.MOVE, eventChangeColorChooser);
+       this.updateColorChooser(event, canvasChooser, ctx);
+       this.drawSelector(this.ctxPalette, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height / 2);
+     });
 
-   canvasChooser.addEventListener('mouseup', (event) => {
-     canvasChooser.removeEventListener('mousemove', eventChangeColorChooser);
-     this.updateColorChooser(event, canvasChooser, ctx);
-     this.drawChooser(ctx);
-     this.drawChooserSelector(ctx, this.chooserX);
+     pouch.STOP.forEach(stop => {
+       canvasChooser.addEventListener(stop, (event) => {
+         canvasChooser.removeEventListener(pouch.MOVE, eventChangeColorChooser);
+         this.updateColorChooser(event, canvasChooser, ctx);
+         this.drawChooser(ctx);
+         this.drawChooserSelector(ctx, this.chooserX);
+         this.drawSelector(this.ctxPalette, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height / 2);
+       });
+     });
    });
-
  }
 
  drawChooser(ctx : CanvasRenderingContext2D){
@@ -215,7 +252,6 @@ export class ColorPicker {
    this.color = this.colorFromChooser = this.getColor(event, canvas, context, true);
    this.colorChanged.emit(this.color);
    this.drawPalette(this.color);
-   this.drawSelector(this.ctxPalette, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height / 2);
  }
 
  updateColor(event, canvas, context){
