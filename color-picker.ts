@@ -11,23 +11,12 @@ const POUCH = [
     MOVE : "touchmove",
     STOP : "touchend"
   }
-  /*,
-  {
-    START : "pointerdown",
-    MOVE : "pointermove",
-    STOP : ["pointerup", "pointercancel"]
-  },
-  {
-    START : "MSPointerDown",
-    MOVE : "MSPointerMove",
-    STOP : ["MSPointerUp",  "MSPointerCancel"]
-  },*/
 ];
 
 @Component({
   selector: 'color-picker',
-  template: ` <canvas #palette style="background:white;"></canvas>
-  <canvas #chooser style="background:white; margin-top: 20px; margin-bottom: 20px; "></canvas>`
+  template: ` <canvas #palette style="background:white;" class='center'></canvas>
+  <canvas #chooser style="background:white; margin-top: 20px; margin-bottom: 20px; " class='center'></canvas>`
 })
 export class ColorPicker {
 
@@ -45,8 +34,6 @@ export class ColorPicker {
 
   requestAnimationFrameID : number;
 
-  previousColor : string;
-
   color : string;
 
   colorFromChooser : string;
@@ -63,20 +50,18 @@ export class ColorPicker {
     } else{
       this.colorFromChooser = "#0000FF";
     }
-    this.previousColor = "#FFFFFF";
     this.init();
   }
 
   init(){
     this.initChooser();
     this.initPalette();
-    this.tick();
   }
 
   drawSelector(ctx : CanvasRenderingContext2D, x : number, y : number ){
     this.drawPalette(this.colorFromChooser);
     ctx.beginPath();
-    ctx.arc(x, y, 10, 0, 2 * Math.PI, false);
+    ctx.arc(x, y, 10 * this.getPixelRatio(ctx), 0, 2 * Math.PI, false);
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.lineWidth = 3;
@@ -93,16 +78,6 @@ export class ColorPicker {
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#FFFFFF';
     ctx.stroke();
-  }
-
-  tick() {
-    this.requestAnimationFrameID = requestAnimationFrame(()=> {
-      this.tick()
-    });
-    if(this.previousColor != this.color){
-      this.previousColor = this.color;
-      this.colorChanged.emit(this.color);
-    }
   }
 
   initPalette(){
@@ -197,6 +172,7 @@ export class ColorPicker {
 
     POUCH.forEach(pouch => {
       canvasChooser.addEventListener(pouch.START, (event) => {
+        this.drawChooser(ctx);
         canvasChooser.addEventListener(pouch.MOVE, eventChangeColorChooser);
         this.updateColorChooser(event, canvasChooser, ctx);
         this.drawSelector(this.ctxPalette, this.ctxPalette.canvas.width, this.ctxPalette.canvas.height / 2);
@@ -251,10 +227,8 @@ export class ColorPicker {
   }
 
   updateColor(event, canvas, context){
-    if(this.color){
-      this.previousColor = this.color.repeat(1);
-    }
     this.color = this.getColor(event, canvas, context, false);
+    this.colorChanged.emit(this.color);
   }
 
   getColor(event, canvas, context, fromChooser : boolean) : string {
