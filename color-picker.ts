@@ -233,10 +233,12 @@ export class ColorPicker {
 
   getColor(event, canvas, context, fromChooser : boolean) : string {
 
-    var bounding = canvas.getBoundingClientRect();
+    var bounding = canvas.getBoundingClientRect(),
+    touchX = event.pageX || event.changedTouches[0].pageX || event.changedTouches[0].screenX, 
+    touchY = event.pageY || event.changedTouches[0].pageY || event.changedTouches[0].screenX; 
 
-    var x = (event.pageX - bounding.left) * this.getPixelRatio(context);
-    var y = (event.pageY - bounding.top) * this.getPixelRatio(context);
+    var x = (touchX - bounding.left) * this.getPixelRatio(context);
+    var y = (touchY - bounding.top) * this.getPixelRatio(context);
 
     if(fromChooser){
       this.chooserX = x;
