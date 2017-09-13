@@ -24,6 +24,10 @@ export class ColorPicker {
 
   @Output() colorChanged = new EventEmitter<String>();
 
+  @Output() colorTouchStart = new EventEmitter<void>();
+
+  @Output() colorTouchEnd = new EventEmitter<void>();
+
   // this is the main palette
   @ViewChild("palette") palette;
 
@@ -107,12 +111,14 @@ export class ColorPicker {
 
     POUCH.forEach(pouch => {
       canvasPalette.addEventListener(pouch.START, (event) => {
+        this.colorTouchStart.emit();
         this.drawPalette(this.colorFromChooser);
         canvasPalette.addEventListener(pouch.MOVE, eventChangeColor);
         this.updateColor(event, canvasPalette, this.ctxPalette);
       });
 
       canvasPalette.addEventListener(pouch.STOP, (event) => {
+        this.colorTouchEnd.emit();
         canvasPalette.removeEventListener(pouch.MOVE, eventChangeColor);
         this.updateColor(event, canvasPalette, this.ctxPalette);
         this.drawSelector(this.ctxPalette, this.paletteX, this.paletteY);
@@ -234,8 +240,8 @@ export class ColorPicker {
   getColor(event, canvas, context, fromChooser : boolean) : string {
 
     var bounding = canvas.getBoundingClientRect(),
-    touchX = event.pageX || event.changedTouches[0].pageX || event.changedTouches[0].screenX, 
-    touchY = event.pageY || event.changedTouches[0].pageY || event.changedTouches[0].screenX; 
+    touchX = event.pageX || event.changedTouches[0].pageX || event.changedTouches[0].screenX,
+    touchY = event.pageY || event.changedTouches[0].pageY || event.changedTouches[0].screenX;
 
     var x = (touchX - bounding.left) * this.getPixelRatio(context);
     var y = (touchY - bounding.top) * this.getPixelRatio(context);
